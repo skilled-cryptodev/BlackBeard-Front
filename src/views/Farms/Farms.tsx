@@ -1,10 +1,9 @@
 import React, { useEffect, useCallback, useState, useMemo, useRef } from 'react'
-import { Route, useRouteMatch, useLocation, NavLink } from 'react-router-dom'
+import { Route, useRouteMatch, useLocation } from 'react-router-dom'
 import BigNumber from 'bignumber.js'
 import { useWeb3React } from '@web3-react/core'
-import { Image, Heading, RowType, Toggle, Text, Button, ArrowForwardIcon, Flex } from '@pancakeswap/uikit'
+import { RowType, Text, Flex } from '@pancakeswap/uikit'
 import { ChainId } from '@pancakeswap/sdk'
-import styled from 'styled-components'
 import FlexLayout from 'components/Layout/Flex'
 import Page from 'components/Layout/Page'
 import { useFarms, usePollFarmsWithUserData, usePriceCakeBusd } from 'state/farms/hooks'
@@ -13,94 +12,14 @@ import { DeserializedFarm } from 'state/types'
 import { useTranslation } from 'contexts/Localization'
 import { getBalanceNumber } from 'utils/formatBalance'
 import { getFarmApr } from 'utils/apr'
-import { orderBy } from 'lodash'
 import isArchivedPid from 'utils/farmHelpers'
-import { latinise } from 'utils/latinise'
 import { useUserFarmStakedOnly, useUserFarmsViewMode } from 'state/user/hooks'
 import { ViewMode } from 'state/user/actions'
-import PageHeader from 'components/PageHeader'
-import SearchInput from 'components/SearchInput'
-import Select, { OptionProps } from 'components/Select/Select'
-import Loading from 'components/Loading'
 import FarmCard, { FarmWithStakedValue } from './components/FarmCard/FarmCard'
 import Table from './components/FarmTable/FarmTable'
-import FarmTabButtons from './components/FarmTabButtons'
 import { RowProps } from './components/FarmTable/Row'
-import ToggleView from './components/ToggleView/ToggleView'
 import { DesktopColumnSchema } from './components/types'
 
-const ControlContainer = styled.div`
-  display: flex;
-  width: 100%;
-  align-items: center;
-  position: relative;
-
-  justify-content: space-between;
-  flex-direction: column;
-  margin-bottom: 32px;
-
-  ${({ theme }) => theme.mediaQueries.sm} {
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 16px 32px;
-    margin-bottom: 0;
-  }
-`
-
-const ToggleWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  margin-left: 10px;
-
-  ${Text} {
-    margin-left: 8px;
-  }
-`
-
-const LabelWrapper = styled.div`
-  > ${Text} {
-    font-size: 12px;
-  }
-`
-
-const FilterContainer = styled.div`
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 8px 0px;
-
-  ${({ theme }) => theme.mediaQueries.sm} {
-    width: auto;
-    padding: 0;
-  }
-`
-
-const ViewControls = styled.div`
-  flex-wrap: wrap;
-  justify-content: space-between;
-  display: flex;
-  align-items: center;
-  width: 100%;
-
-  > div {
-    padding: 8px 0px;
-  }
-
-  ${({ theme }) => theme.mediaQueries.sm} {
-    justify-content: flex-start;
-    width: auto;
-
-    > div {
-      padding: 0;
-    }
-  }
-`
-
-const StyledImage = styled(Image)`
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 58px;
-`
 const NUMBER_OF_FARMS_VISIBLE = 12
 
 const getDisplayApr = (cakeRewardsApr?: number, lpRewardsApr?: number) => {
@@ -119,11 +38,9 @@ const Farms: React.FC = () => {
   const { t } = useTranslation()
   const { data: farmsLP, userDataLoaded } = useFarms()
   const cakePrice = usePriceCakeBusd()
-  const [query, setQuery] = useState('')
-  const [viewMode, setViewMode] = useUserFarmsViewMode()
+  const [viewMode] = useUserFarmsViewMode()
   const { account } = useWeb3React()
-  const [sortOption, setSortOption] = useState('hot')
-  const { observerRef, isIntersecting } = useIntersectionObserver()
+  const { isIntersecting } = useIntersectionObserver()
   const chosenFarmsLength = useRef(0)
 
   const isArchived = pathname.includes('archived')
@@ -136,7 +53,7 @@ const Farms: React.FC = () => {
   // Connected users should see loading indicator until first userData has loaded
   const userDataReady = !account || (!!account && userDataLoaded)
 
-  const [stakedOnly, setStakedOnly] = useUserFarmStakedOnly(isActive)
+  const [stakedOnly] = useUserFarmStakedOnly(isActive)
 
   const activeFarms = farmsLP.filter((farm) => farm.pid !== 0 && farm.multiplier !== '0X' && !isArchivedPid(farm.pid))
   const inactiveFarms = farmsLP.filter((farm) => farm.pid !== 0 && farm.multiplier === '0X' && !isArchivedPid(farm.pid))
@@ -156,7 +73,7 @@ const Farms: React.FC = () => {
 
   const farmsList = useCallback(
     (farmsToDisplay: DeserializedFarm[]): FarmWithStakedValue[] => {
-      let farmsToDisplayWithAPR: FarmWithStakedValue[] = farmsToDisplay.map((farm) => {
+      const farmsToDisplayWithAPR: FarmWithStakedValue[] = farmsToDisplay.map((farm) => {
         if (!farm.lpTotalInQuoteToken || !farm.quoteTokenPriceBusd) {
           return farm
         }
@@ -168,20 +85,10 @@ const Farms: React.FC = () => {
         return { ...farm, apr: cakeRewardsApr, lpRewardsApr, liquidity: totalLiquidity }
       })
 
-      if (query) {
-        const lowercaseQuery = latinise(query.toLowerCase())
-        farmsToDisplayWithAPR = farmsToDisplayWithAPR.filter((farm: FarmWithStakedValue) => {
-          return latinise(farm.lpSymbol.toLowerCase()).includes(lowercaseQuery)
-        })
-      }
       return farmsToDisplayWithAPR
     },
-    [cakePrice, query, isActive],
+    [cakePrice, isActive],
   )
-
-  const handleChangeQuery = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(event.target.value)
-  }
 
   const [numberOfFarmsVisible, setNumberOfFarmsVisible] = useState(NUMBER_OF_FARMS_VISIBLE)
 
@@ -189,26 +96,7 @@ const Farms: React.FC = () => {
     let chosenFarms = []
 
     const sortFarms = (farms: FarmWithStakedValue[]): FarmWithStakedValue[] => {
-      switch (sortOption) {
-        case 'apr':
-          return orderBy(farms, (farm: FarmWithStakedValue) => farm.apr + farm.lpRewardsApr, 'desc')
-        case 'multiplier':
-          return orderBy(
-            farms,
-            (farm: FarmWithStakedValue) => (farm.multiplier ? Number(farm.multiplier.slice(0, -1)) : 0),
-            'desc',
-          )
-        case 'earned':
-          return orderBy(
-            farms,
-            (farm: FarmWithStakedValue) => (farm.userData ? Number(farm.userData.earnings) : 0),
-            'desc',
-          )
-        case 'liquidity':
-          return orderBy(farms, (farm: FarmWithStakedValue) => Number(farm.liquidity), 'desc')
-        default:
-          return farms
-      }
+      return farms
     }
 
     if (isActive) {
@@ -223,7 +111,6 @@ const Farms: React.FC = () => {
 
     return sortFarms(chosenFarms).slice(0, numberOfFarmsVisible)
   }, [
-    sortOption,
     activeFarms,
     farmsList,
     inactiveFarms,
@@ -361,10 +248,6 @@ const Farms: React.FC = () => {
         </Route>
       </FlexLayout>
     )
-  }
-
-  const handleSortOptionChange = (option: OptionProps): void => {
-    setSortOption(option.value)
   }
 
   return (

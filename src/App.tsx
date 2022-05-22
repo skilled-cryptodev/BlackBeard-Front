@@ -10,7 +10,6 @@ import { usePollCoreFarmData } from 'state/farms/hooks'
 import { useFetchProfile } from 'state/profile/hooks'
 import SubgraphHealthIndicator from 'components/SubgraphHealthIndicator'
 import GlobalStyle from './style/Global'
-import Menu from './components/Menu'
 import SuspenseWithChunkError from './components/SuspenseWithChunkError'
 import { ToastListener } from './contexts/ToastsContext'
 import PageLoader from './components/Loader/PageLoader'
@@ -18,19 +17,12 @@ import EasterEgg from './components/EasterEgg'
 import GlobalCheckClaimStatus from './components/GlobalCheckClaimStatus'
 import Header from './components/Header'
 import history from './routerHistory'
-// Views included in the main bundle
-import Pools from './views/Pools'
-import Swap from './views/Swap'
-import { RedirectPathToSwapOnly, RedirectToSwap } from './views/Swap/redirects'
 import { useInactiveListener } from './hooks/useInactiveListener'
 import useSentryUser from './hooks/useSentryUser'
 
 // Route-based code splitting
 // Only pool is included in the main bundle because of it's the most visited page
 const Home = lazy(() => import('./views/Home'))
-const Farms = lazy(() => import('./views/Farms'))
-const NotFound = lazy(() => import('./views/NotFound'))
-const Info = lazy(() => import('./views/Info'))
 
 // This config is required for number formatting
 BigNumber.config({
