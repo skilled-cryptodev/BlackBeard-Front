@@ -19,7 +19,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ hasLowBnbBalance, onDismiss }) 
   const { t } = useTranslation()
   const { account } = useWeb3React()
   const { balance, fetchStatus } = useGetBnbBalance()
-  const { balance: cakeBalance, fetchStatus: cakeFetchStatus } = useTokenBalance(tokens.cake.address)
+  const { balance: beardBalance, fetchStatus: beardFetchStatus } = useTokenBalance(tokens.bbdt.address)
   const { logout } = useAuth()
 
   const handleLogout = () => {
@@ -29,7 +29,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ hasLowBnbBalance, onDismiss }) 
 
   return (
     <>
-      <Text color="secondary" fontSize="12px" textTransform="uppercase" fontWeight="bold" mb="8px">
+      <Text color="primary" fontSize="12px" textTransform="uppercase" fontWeight="bold" mb="8px">
         {t('Your Address')}
       </Text>
       <CopyAddress account={account} mb="24px" />
@@ -42,7 +42,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ hasLowBnbBalance, onDismiss }) 
         </Message>
       )}
       <Flex alignItems="center" justifyContent="space-between">
-        <Text color="textSubtle">{t('BNB Balance')}</Text>
+        <Text color="white">{t('BNB Balance')}</Text>
         {fetchStatus !== FetchStatus.Fetched ? (
           <Skeleton height="22px" width="60px" />
         ) : (
@@ -50,11 +50,11 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ hasLowBnbBalance, onDismiss }) 
         )}
       </Flex>
       <Flex alignItems="center" justifyContent="space-between" mb="24px">
-        <Text color="textSubtle">{t('CAKE Balance')}</Text>
-        {cakeFetchStatus !== FetchStatus.Fetched ? (
+        <Text color="white">{t('BBDT Balance')}</Text>
+        {beardFetchStatus !== FetchStatus.Fetched ? (
           <Skeleton height="22px" width="60px" />
         ) : (
-          <Text>{getFullDisplayBalance(cakeBalance, 18, 3)}</Text>
+          <Text>{getFullDisplayBalance(beardBalance, 18, 3)}</Text>
         )}
       </Flex>
       <Flex alignItems="center" justifyContent="end" mb="24px">
