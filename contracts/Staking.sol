@@ -1028,18 +1028,13 @@ contract Operator {
     }
 }
 
-// import "@nomiclabs/buidler/console.sol";
-interface IMigratorChef {
-    function migrate(IBEP20 token) external returns (IBEP20);
-}
-
-contract MasterChef is Ownable, Operator {
+contract Staking is Ownable, Operator {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
 
     // Info of each user.
     struct UserInfo {
-        uint256 amount;     // How many LP tokens the user has provided.
+        uint256 amount;
         uint256 depositTime;
     }
 
@@ -1053,8 +1048,6 @@ contract MasterChef is Ownable, Operator {
     IBEP20 public token;
     // Bonus muliplier for early reward makers.
     uint256 public BONUS_MULTIPLIER = 1;
-    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
-    IMigratorChef public migrator;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -1062,10 +1055,11 @@ contract MasterChef is Ownable, Operator {
     mapping (address => bool) public poolExist;
     // Info of each user that stakes LP tokens.
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
-    // Total allocation poitns. Must be the sum of all allocation points in all pools.
-    uint256 public totalAllocPoint = 0;
-    // The block number when reward mining starts.
-    uint256 public startBlock;
+
+    uint256 public MIN_DEPOSIT_AMOUNT = 10000 * (10 ** 9);
+
+    mapping (address => uint256) public userTotalStaked;
+    mapping (address => uint256) public userTotalEarned;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -1074,11 +1068,9 @@ contract MasterChef is Ownable, Operator {
     event UpdatePool(uint256 time, uint256 amount);
 
     constructor(
-        IBEP20 _token,
-        uint256 _startBlock
+        IBEP20 _token
     ) public {
         token = _token;
-        startBlock = _startBlock;
     }
 
     function updateMultiplier(uint256 multiplierNumber) public onlyOwner {
@@ -1110,11 +1102,13 @@ contract MasterChef is Ownable, Operator {
         UserInfo storage user = userInfo[_pid][msg.sender];
 
         require (_pid != 0, 'deposit by staking');
-        require (_amount > 0, 'deposit amount failed');
+        require (_amount >= MIN_DEPOSIT_AMOUNT, 'deposit amount failed');
         require (user.depositTime.add(pool.lockDay.mul(86400)) < now, 'locked');
 
         if (user.amount > 0) {
-            user.amount = user.amount.add(user.amount.mul(pool.apy).div(100));
+            uint256 reward = user.amount.mul(pool.apy).div(100);
+            user.amount = user.amount.add(reward);
+            userTotalEarned[msg.sender] = userTotalEarned[msg.sender].add(reward);
         }
 
         uint256 preBalance = token.balanceOf(address(this));
@@ -1123,6 +1117,8 @@ contract MasterChef is Ownable, Operator {
 
         user.amount = user.amount.add(afterBalance.sub(preBalance));
         user.depositTime = now;
+
+        userTotalStaked[msg.sender] = userTotalStaked[msg.sender].add(_amount);
         
         emit Deposit(msg.sender, _pid, _amount);
     }
@@ -1135,13 +1131,14 @@ contract MasterChef is Ownable, Operator {
         require (user.amount > 0, 'deposit amount failed');
         require (user.depositTime.add(pool.lockDay.mul(86400)) < now, 'locked');
 
-        uint256 rewardAmount = user.amount.add(user.amount.mul(pool.apy).div(100));
-        token.transfer(address(msg.sender), rewardAmount);
+        uint256 reward = user.amount.mul(pool.apy).div(100);
+        token.transfer(address(msg.sender), user.amount.add(reward));
+        userTotalEarned[msg.sender] = userTotalEarned[msg.sender].add(reward);
 
         user.amount = 0;
         user.depositTime = now;
         
-        emit Withdraw(msg.sender, _pid, rewardAmount);
+        emit Withdraw(msg.sender, _pid, user.amount.add(reward));
     }
 
     function updateStakingPool() public onlyOperator {
