@@ -10,6 +10,7 @@ import {
   getIfoV1Contract,
   getIfoV2Contract,
   getMasterchefContract,
+  getStakingContract,
   getPointCenterIfoContract,
   getSouschefContract,
   getClaimRefundContract,
@@ -117,6 +118,11 @@ export const useLotteryV2Contract = () => {
 export const useMasterchef = () => {
   const { library } = useActiveWeb3React()
   return useMemo(() => getMasterchefContract(library.getSigner()), [library])
+}
+
+export const useStaking = () => {
+  const { library } = useActiveWeb3React()
+  return useMemo(() => getStakingContract(library.getSigner()), [library])
 }
 
 export const useSousChef = (id) => {
