@@ -54,7 +54,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ hasLowBnbBalance, onDismiss }) 
         {beardFetchStatus !== FetchStatus.Fetched ? (
           <Skeleton height="22px" width="60px" />
         ) : (
-          <Text>{getFullDisplayBalance(beardBalance, 18, 3)}</Text>
+          <Text>{getFullDisplayBalance(beardBalance, 9, 3)}</Text>
         )}
       </Flex>
       <Flex alignItems="center" justifyContent="end" mb="24px">
