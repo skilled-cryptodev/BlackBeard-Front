@@ -9,10 +9,12 @@ import tokens from 'config/constants/tokens'
 import useToast from 'hooks/useToast'
 import { useERC20 } from 'hooks/useContract'
 import useTotalSupply from 'hooks/useTotalSupply'
+import { usePriceBeardBusd } from 'state/farms/hooks'
 import { fetchStakingsPublicDataAsync } from 'state/stakings'
 import { useStakings, usePollStakingsWithUserData } from 'state/stakings/hooks'
 import { useTokenBalance } from 'state/wallet/hooks'
 import { getStakingAddress } from 'utils/addressHelpers'
+import { getBalanceAmount } from 'utils/formatBalance'
 import { logError } from 'utils/sentry'
 import ConnectWalletButton from 'components/ConnectWalletButton'
 import Page from 'components/Layout/Page'
@@ -76,6 +78,8 @@ const Home: React.FC = () => {
   const totalSupply = useTotalSupply(tokens.bbdt)
   const stakedPercent = poolTotalStaked && totalSupply ? new BigNumber(poolTotalStaked.toSignificant(4)).div(new BigNumber(totalSupply.toSignificant(4))).toFixed(2) : 0
 
+  const beardPriceBusd = usePriceBeardBusd()
+
   const { onApprove } = useApproveStaking(tokenContract)
 
   const handleApprove = useCallback(async () => {
@@ -94,7 +98,7 @@ const Home: React.FC = () => {
   const renderApprovalOrStakeButton = () => {
     const isApproved = account && userAllowance && userAllowance.isGreaterThan(0)
     return isApproved ? (
-      <Button variant="secondary" minWidth="200px" >Stake</Button>
+      <Button variant="secondary" minWidth="200px" >{`Stake ${lockDay}days`}</Button>
     ) : (
       <Button variant="secondary" minWidth="200px" disabled={requestedApproval} onClick={handleApprove}>
         {t('Enable Contract')}
@@ -141,7 +145,7 @@ const Home: React.FC = () => {
                     mr="5px"
                     ml="5px"
                   >
-                    {`${item} days`}
+                    {`${item}days`}
                   </Button>
                 )
               })}
@@ -162,17 +166,17 @@ const Home: React.FC = () => {
             <StyledBorderBox width="49%" minHeight="170px">
               <Box>
                 <Text fontSize="20px">{t('BBDT Staked')}</Text>
-                <Text fontSize="18px" color="primary">xxxxxxxxx</Text>
+                <Text fontSize="18px" color="primary">{`${userTotalStaked ? getBalanceAmount(userTotalStaked, 9) : 0} BBDT`}</Text>
               </Box>
               <Box mt="10px">
                 <Text fontSize="20px">{t('BBDT Earned')}</Text>
-                <Text fontSize="18px" color="primary">xxxxxxxxx</Text>
+                <Text fontSize="18px" color="primary">{`${userTotalEarned ? getBalanceAmount(userTotalEarned, 9) : 0} BBDT`}</Text>
               </Box>
             </StyledBorderBox>
             <StyledBorderBox width="49%" minHeight="170px">
               <Flex flexDirection="column" alignItems="center" justifyContent="center">
                 <Text fontSize="30px" mt="20px">{t('Total Value (USDT)')}</Text>
-                <Text fontSize="32px" color="primary">xxxxxxxxx</Text>
+                <Text fontSize="32px" color="primary">{poolTotalStaked && beardPriceBusd ? beardPriceBusd.times(new BigNumber(poolTotalStaked.toSignificant(4))).toFixed(2) : 0}</Text>
               </Flex>
             </StyledBorderBox>
           </RowBetween>

@@ -82,7 +82,7 @@ export const usePollCoreFarmData = () => {
   const fastRefresh = useFastFresh()
 
   useEffect(() => {
-    dispatch(fetchFarmsPublicDataAsync([251, 252]))
+    dispatch(fetchFarmsPublicDataAsync([251, 252, 1]))
   }, [dispatch, fastRefresh])
 }
 
@@ -155,4 +155,16 @@ export const usePriceCakeBusd = (): BigNumber => {
   }, [cakePriceBusdAsString])
 
   return cakePriceBusd
+}
+
+export const usePriceBeardBusd = (): BigNumber => {
+  const beardBnbFarm = useFarmFromPid(1)
+
+  const beardPriceBusdAsString = beardBnbFarm.tokenPriceBusd
+
+  const beardPriceBusd = useMemo(() => {
+    return new BigNumber(beardPriceBusdAsString)
+  }, [beardPriceBusdAsString])
+
+  return beardPriceBusd
 }
