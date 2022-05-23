@@ -86,6 +86,12 @@ export interface DeserializedFarmConfig extends FarmConfigBaseProps {
   quoteToken: Token
 }
 
+export interface StakingConfig {
+  pid: number
+  apy: number
+  lockDay: number
+}
+
 interface PoolConfigBaseProps {
   sousId: number
   contractAddress: Address

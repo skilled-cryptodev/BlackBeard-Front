@@ -3,6 +3,7 @@ import { save, load } from 'redux-localstorage-simple'
 import cloneDeep from 'lodash/cloneDeep'
 import { useDispatch } from 'react-redux'
 import farmsReducer from './farms'
+import stakingsReducer from './stakings'
 import poolsReducer from './pools'
 import profileReducer, { initialState as profileInitialState } from './profile'
 import blockReducer from './block'
@@ -32,6 +33,7 @@ const store = configureStore({
   reducer: {
     block: blockReducer,
     farms: farmsReducer,
+    stakings: stakingsReducer,
     pools: poolsReducer,
     profile: profileReducer,
     info: infoReducer,

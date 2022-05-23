@@ -5,6 +5,7 @@ import {
   SerializedFarmConfig,
   DeserializedPoolConfig,
   SerializedPoolConfig,
+  StakingConfig,
   Team,
   DeserializedFarmConfig,
   FetchStatus,
@@ -187,6 +188,24 @@ export type TeamsById = {
   [key: string]: Team
 }
 
+// Staking states
+
+export interface Staking extends StakingConfig {
+  userData?: {
+    amount: string
+    depositTime: string
+  }
+}
+
+export interface StakingsState {
+  data: Staking[]
+  allowance: string
+  totalStaked: string
+  totalEarned: string
+  loadArchivedStakingsData: boolean
+  userDataLoaded: boolean
+}
+
 // Block
 
 export interface BlockState {
@@ -199,6 +218,7 @@ export interface BlockState {
 export interface State {
   block: BlockState
   farms: SerializedFarmsState
+  stakings: StakingsState
   pools: PoolsState
   profile: ProfileState
 }

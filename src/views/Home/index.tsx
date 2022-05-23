@@ -1,13 +1,23 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
+import BigNumber from 'bignumber.js'
 import { Box, Button, Card, CardBody, Flex, Input, Text } from '@pancakeswap/uikit'
 import styled from 'styled-components'
-import PageSection from 'components/PageSection'
 import { useWeb3React } from '@web3-react/core'
-import useTheme from 'hooks/useTheme'
+import { useAppDispatch } from 'state'
+import { useTranslation } from 'contexts/Localization'
+import tokens from 'config/constants/tokens'
+import useToast from 'hooks/useToast'
+import { useERC20 } from 'hooks/useContract'
+import useTotalSupply from 'hooks/useTotalSupply'
+import { fetchStakingsPublicDataAsync } from 'state/stakings'
+import { useStakings, usePollStakingsWithUserData } from 'state/stakings/hooks'
+import { useTokenBalance } from 'state/wallet/hooks'
+import { getStakingAddress } from 'utils/addressHelpers'
+import { logError } from 'utils/sentry'
 import ConnectWalletButton from 'components/ConnectWalletButton'
-import Container from 'components/Layout/Container'
-import Page, { PageMeta } from 'components/Layout/Page'
-import { RowBetween, RowFlat } from 'components/Layout/Row'
+import Page from 'components/Layout/Page'
+import { RowBetween } from 'components/Layout/Row'
+import useApproveStaking from './hooks/useApproveStaking'
 
 const StyledInputArea = styled(RowBetween)`
   border: solid 1px #7aff00;
@@ -27,50 +37,94 @@ const StyledBorderBox = styled(Box)`
   padding: 20px;
 `
 
-const showBanner = true
 const lockdayList = [30, 60, 90, 180, 360]
 const apyList = [3, 7, 10, 25, 60]
 
 const Home: React.FC = () => {
-  const { theme } = useTheme()
+  const { t } = useTranslation()
+  const { toastError } = useToast()
   const { account } = useWeb3React()
 
-  const [ lockDay, setLockDay ] = useState(30)
-  const [ lockAPY, setLockAPY ] = useState(30)
+  const [pid, setPid] = useState(0)
+  const [lockDay, setLockDay] = useState(lockdayList[pid])
+  const [lockAPY, setLockAPY] = useState(apyList[pid])
+
+  const [requestedApproval, setRequestedApproval] = useState(false)
+
+  const dispatch = useAppDispatch()
+
+  usePollStakingsWithUserData()
+
+  const { data, allowance, totalStaked, totalEarned } = useStakings()
+
+  const userAllowance = new BigNumber(allowance)
+  const userTotalStaked = new BigNumber(totalStaked)
+  const userTotalEarned = new BigNumber(totalEarned)
 
   const handleLockDayChange = (value: number, index: number) => {
     setLockDay(value)
     setLockAPY(apyList[index])
+    setPid(index)
   }
 
   const now = new Date()
   const unlockDate = new Date(now.setDate(now.getDate() + lockDay))
 
-  console.log("pooh, unlockDate = ", unlockDate.toUTCString())
+  const tokenContract = useERC20(tokens.bbdt.address)
+
+  const poolTotalStaked = useTokenBalance(getStakingAddress(), tokens.bbdt)
+  const totalSupply = useTotalSupply(tokens.bbdt)
+  const stakedPercent = poolTotalStaked && totalSupply ? new BigNumber(poolTotalStaked.toSignificant(4)).div(new BigNumber(totalSupply.toSignificant(4))).toFixed(2) : 0
+
+  const { onApprove } = useApproveStaking(tokenContract)
+
+  const handleApprove = useCallback(async () => {
+    try {
+      setRequestedApproval(true)
+      await onApprove()
+      dispatch(fetchStakingsPublicDataAsync({ account }))
+    } catch (e) {
+      logError(e)
+      toastError(t('Error'), t('Please try again. Confirm the transaction and make sure you are paying enough gas!'))
+    } finally {
+      setRequestedApproval(false)
+    }
+  }, [onApprove, dispatch, account, t, toastError])
+
+  const renderApprovalOrStakeButton = () => {
+    const isApproved = account && userAllowance && userAllowance.isGreaterThan(0)
+    return isApproved ? (
+      <Button variant="secondary" minWidth="200px" >Stake</Button>
+    ) : (
+      <Button variant="secondary" minWidth="200px" disabled={requestedApproval} onClick={handleApprove}>
+        {t('Enable Contract')}
+      </Button>
+    )
+  }
 
   return (
     <Page>
       <Flex flexDirection="column" alignItems="center" justifyContent="center" width="100%" mb="20px">
-        <Text fontSize="30px">Staking Dashboard</Text>
-        <Text fontSize="26px">High APR, Low Risk</Text>
+        <Text fontSize="30px">{t('Staking Dashboard')}</Text>
+        <Text fontSize="26px">{t('High APR, Low Risk')}</Text>
       </Flex>
       <Card>
         <CardBody m="0 30px">
           <Flex justifyContent="center">
-            <Text fontSize="36px">BBDT Calculator</Text>
+            <Text fontSize="36px">{t('BBDT Calculator')}</Text>
           </Flex>
           <RowBetween mt="30px">
             <StyledBorderArea maxWidth="380px">
-              <Text>BBDT</Text>
+              <Text>{t('BBDT')}</Text>
               <StyledInputArea maxWidth="280px">
                 <Input />
-                <Text ml="20px">MAX</Text>
+                <Text ml="20px">{t('MAX')}</Text>
               </StyledInputArea>
             </StyledBorderArea>
             <Text fontSize="30px">{`APR ${lockAPY}%`}</Text>
           </RowBetween>
           <StyledBorderBox mt="30px">
-            <Text>Lock tokens for :</Text>
+            <Text>{t('Lock tokens for :')}</Text>
             <RowBetween mt="10px">
               {lockdayList.map((item, index) => {
                 const handleClick = () => {
@@ -98,7 +152,7 @@ const Home: React.FC = () => {
             <Text fontSize="20px">{`Lock until ${unlockDate.getDate()}/${unlockDate.getMonth() + 1}/${unlockDate.getFullYear()} ${unlockDate.getHours()}:${unlockDate.getMinutes()}`}</Text>
           </Flex>
           <Flex flexDirection="column" justifyContent="center" alignItems="center" mt="20px">
-            <ConnectWalletButton />
+            {!account ? <ConnectWalletButton /> : renderApprovalOrStakeButton()}
           </Flex>
         </CardBody>
       </Card>
@@ -107,29 +161,29 @@ const Home: React.FC = () => {
           <RowBetween width="100%">
             <StyledBorderBox width="49%" minHeight="170px">
               <Box>
-                <Text fontSize="20px">BBDT Staked</Text>
+                <Text fontSize="20px">{t('BBDT Staked')}</Text>
                 <Text fontSize="18px" color="primary">xxxxxxxxx</Text>
               </Box>
               <Box mt="10px">
-                <Text fontSize="20px">BBDT Earned</Text>
+                <Text fontSize="20px">{t('BBDT Earned')}</Text>
                 <Text fontSize="18px" color="primary">xxxxxxxxx</Text>
               </Box>
             </StyledBorderBox>
             <StyledBorderBox width="49%" minHeight="170px">
               <Flex flexDirection="column" alignItems="center" justifyContent="center">
-                <Text fontSize="30px" mt="20px">Total Value (USDT)</Text>
+                <Text fontSize="30px" mt="20px">{t('Total Value (USDT)')}</Text>
                 <Text fontSize="32px" color="primary">xxxxxxxxx</Text>
               </Flex>
             </StyledBorderBox>
           </RowBetween>
           <StyledBorderBox mt="20px">
             <RowBetween>
-              <Text fontSize="20px">Total Staked :</Text>
-              <Text fontSize="20px">0.00 BBDT</Text>
+              <Text fontSize="20px">{t('Total Staked :')}</Text>
+              <Text fontSize="20px">{poolTotalStaked ? poolTotalStaked.toSignificant(4) : 0} BBDT</Text>
             </RowBetween>
             <RowBetween mt="20px">
-              <Text fontSize="20px">% Staked :</Text>
-              <Text fontSize="20px">0.00 %</Text>
+              <Text fontSize="20px">{t('% Staked :')}</Text>
+              <Text fontSize="20px">{stakedPercent} %</Text>
             </RowBetween>
           </StyledBorderBox>
         </CardBody>
