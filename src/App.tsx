@@ -16,6 +16,7 @@ import PageLoader from './components/Loader/PageLoader'
 import EasterEgg from './components/EasterEgg'
 import GlobalCheckClaimStatus from './components/GlobalCheckClaimStatus'
 import Header from './components/Header'
+import Footer from './components/Footer'
 import history from './routerHistory'
 import { useInactiveListener } from './hooks/useInactiveListener'
 import useSentryUser from './hooks/useSentryUser'
@@ -56,6 +57,7 @@ const App: React.FC = () => {
           </Route>
         </Switch>
       </SuspenseWithChunkError>
+      <Footer />
       <EasterEgg iterations={2} />
       <ToastListener />
       <SubgraphHealthIndicator />
