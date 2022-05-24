@@ -1,6 +1,7 @@
 export type Breakpoints = string[];
 
 export type MediaQueries = {
+  xxs: string;
   xs: string;
   sm: string;
   md: string;
