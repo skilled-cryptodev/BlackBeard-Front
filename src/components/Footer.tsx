@@ -11,6 +11,9 @@ const StyledFooterWrapper = styled(Flex)`
   margin: 15px auto;
   align-items: center;
 
+  ${({ theme }) => theme.mediaQueries.xxs} {
+    padding: 0 10px;
+  }
   ${({ theme }) => theme.mediaQueries.xs} {
     padding: 0 15px;
   }

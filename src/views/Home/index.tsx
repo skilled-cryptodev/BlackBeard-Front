@@ -51,22 +51,62 @@ const MaxButtonArea = styled.div`
   cursor: pointer;
 `
 
-const StyledCardBody = styled(CardBody)`
+const StyledCard = styled(Card)`
   margin: 0 30px;
+  ${({ theme }) => theme.mediaQueries.xxs} {
+    margin: 0 0px;
+    margin-bottom: 20px;
+  }
   ${({ theme }) => theme.mediaQueries.xs} {
     margin: 0 5px;
+    margin-bottom: 20px;
   }
   ${({ theme }) => theme.mediaQueries.sm} {
     margin: 0 15px;
+    margin-bottom: 20px;
   }
   ${({ theme }) => theme.mediaQueries.md} {
     margin: 0 20px;
+    margin-bottom: 20px;
   }
   ${({ theme }) => theme.mediaQueries.lg} {
     margin: 0 25px;
+    margin-bottom: 20px;
   }
   ${({ theme }) => theme.mediaQueries.xl} {
     margin: 0 30px;
+    margin-bottom: 20px;
+  }
+
+  margin-bottom: 20px;
+`
+
+const StyledCardBody = styled(CardBody)`
+  margin: 0 30px;
+  padding: 24px;
+  ${({ theme }) => theme.mediaQueries.xxs} {
+    margin: 0 0px;
+    padding: 15px 5px;
+  }
+  ${({ theme }) => theme.mediaQueries.xs} {
+    margin: 0 5px;
+    padding: 15px 10px;
+  }
+  ${({ theme }) => theme.mediaQueries.sm} {
+    margin: 0 15px;
+    padding: 15px 15px;
+  }
+  ${({ theme }) => theme.mediaQueries.md} {
+    margin: 0 20px;
+    padding: 20px;
+  }
+  ${({ theme }) => theme.mediaQueries.lg} {
+    margin: 0 25px;
+    padding: 24px;
+  }
+  ${({ theme }) => theme.mediaQueries.xl} {
+    margin: 0 30px;
+    padding: 24px;
   }
 `
 
@@ -216,13 +256,13 @@ const Home: React.FC = () => {
   return (
     <Page>
       <Flex flexDirection="column" alignItems="center" justifyContent="center" width="100%" mb="20px">
-        <Heading as="h1" scale="xl">{t('Staking Dashboard')}</Heading>
-        <Heading as="h2" >{t('High APR, Low Risk')}</Heading>
+        <Heading as="h1" scale={isMobile ? "md" : "xl"}>{t('Staking Dashboard')}</Heading>
+        <Heading as={isMobile ? "h3" : "h2"} >{t('High APR, Low Risk')}</Heading>
       </Flex>
-      <Card>
+      <StyledCard>
         <StyledCardBody>
           <Flex justifyContent="center">
-            <Heading as="h1" scale="xl">{t('BBDT Calculator')}</Heading>
+            <Heading as="h1" scale={isMobile ? "md" : "xl"}>{t('BBDT Calculator')}</Heading>
           </Flex>
           <RowBetween mt="30px">
             <StyledBorderArea maxWidth="380px">
@@ -258,16 +298,16 @@ const Home: React.FC = () => {
             </RowBetween>
           </StyledBorderBox>
           <Flex flexDirection="column" justifyContent="center" alignItems="center" mt="40px">
-            <Text fontSize="20px">{`Upto ${lockAPY}% return on ${lockDay}days`}</Text>
-            <Text fontSize="20px">{`Lock until ${unlockDate.getDate()}/${unlockDate.getMonth() + 1}/${unlockDate.getFullYear()} ${unlockDate.getHours()}:${unlockDate.getMinutes()}`}</Text>
+            <Text fontSize={isMobile ? "16px" : "20px"}>{`Upto ${lockAPY}% return on ${lockDay}days`}</Text>
+            <Text fontSize={isMobile ? "16px" : "20px"}>{`Lock until ${unlockDate.getDate()}/${unlockDate.getMonth() + 1}/${unlockDate.getFullYear()} ${unlockDate.getHours()}:${unlockDate.getMinutes()}`}</Text>
           </Flex>
           <Flex justifyContent="center" alignItems="center" mt="20px">
             {!account ? <ConnectWalletButton /> : renderApprovalOrStakeButton()}
             {userStakeUnlockPeriod === 0 && userStakedAmount.gt(0) && renderWithdrawButton() }
           </Flex>
         </StyledCardBody>
-      </Card>
-      <Card mt="20px">
+      </StyledCard>
+      <StyledCard>
         <StyledCardBody>
           <Flex width="100%" flexDirection={isMobile ? "column" : "row"} justifyContent="space-between">
             <StyledBorderBox width={isMobile ? "100%" : "49%"} minHeight="170px">
@@ -282,23 +322,23 @@ const Home: React.FC = () => {
             </StyledBorderBox>
             <StyledBorderBox width={isMobile ? "100%" : "49%"} minHeight="170px" mt={isMobile ? "20px" : '0px'}>
               <Flex flexDirection="column" alignItems="center" justifyContent="center">
-                <Text fontSize="30px" mt="20px">{t('Total Value (USDT)')}</Text>
-                <Text fontSize="32px" color="primary">{poolTotalStaked && beardPriceBusd ? beardPriceBusd.times(new BigNumber(poolTotalStaked.toSignificant(4))).toFixed(2) : 0}</Text>
+                <Text fontSize={isMobile ? "20px" : "30px"} mt="30px">{t('Total Value (USDT)')}</Text>
+                <Text fontSize={isMobile ? "22px" : "32px"} color="primary">{poolTotalStaked && beardPriceBusd ? beardPriceBusd.times(new BigNumber(poolTotalStaked.toSignificant(4))).toFixed(2) : 0}</Text>
               </Flex>
             </StyledBorderBox>
           </Flex>
           <StyledBorderBox mt="20px">
-            <RowBetween>
+            <Flex width="100%" flexDirection={isMobile ? "column" : "row"} justifyContent="space-between">
               <Text fontSize="20px">{t('Total Staked :')}</Text>
               <Text fontSize="20px">{poolTotalStaked ? poolTotalStaked.toSignificant(4) : 0} BBDT</Text>
-            </RowBetween>
-            <RowBetween mt="20px">
+            </Flex>
+            <Flex width="100%" flexDirection={isMobile ? "column" : "row"} justifyContent="space-between" mt="20px">
               <Text fontSize="20px">{t('% Staked :')}</Text>
               <Text fontSize="20px">{stakedPercent} %</Text>
-            </RowBetween>
+            </Flex>
           </StyledBorderBox>
         </StyledCardBody>
-      </Card>
+      </StyledCard>
     </Page>
   )
 }

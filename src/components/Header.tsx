@@ -13,6 +13,9 @@ const StyledHeaderWrapper = styled(Flex)`
   margin: 15px auto;
   align-items: center;
 
+  ${({ theme }) => theme.mediaQueries.xxs} {
+    padding: 0 10px;
+  }
   ${({ theme }) => theme.mediaQueries.xs} {
     padding: 0 15px;
   }
@@ -32,6 +35,10 @@ const LogoImage = styled.img`
   width: 150px;
   height: 150px;
 
+  ${({ theme }) => theme.mediaQueries.xxs} {
+    width: 70px;
+    height: 70px;
+  }
   ${({ theme }) => theme.mediaQueries.xs} {
     width: 80px;
     height: 80px;
