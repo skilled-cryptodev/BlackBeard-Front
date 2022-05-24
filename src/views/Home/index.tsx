@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import BigNumber from 'bignumber.js'
-import { Box, Button, Card, CardBody, Flex, Input, Text } from '@pancakeswap/uikit'
+import { Box, Button, Card, CardBody, Flex, Heading, Input, Text, useMatchBreakpoints } from '@pancakeswap/uikit'
 import styled from 'styled-components'
 import { useWeb3React } from '@web3-react/core'
 import { useAppDispatch } from 'state'
@@ -51,10 +51,30 @@ const MaxButtonArea = styled.div`
   cursor: pointer;
 `
 
+const StyledCardBody = styled(CardBody)`
+  margin: 0 30px;
+  ${({ theme }) => theme.mediaQueries.xs} {
+    margin: 0 5px;
+  }
+  ${({ theme }) => theme.mediaQueries.sm} {
+    margin: 0 15px;
+  }
+  ${({ theme }) => theme.mediaQueries.md} {
+    margin: 0 20px;
+  }
+  ${({ theme }) => theme.mediaQueries.lg} {
+    margin: 0 25px;
+  }
+  ${({ theme }) => theme.mediaQueries.xl} {
+    margin: 0 30px;
+  }
+`
+
 const Home: React.FC = () => {
   const { t } = useTranslation()
   const { toastError } = useToast()
   const { account } = useWeb3React()
+  const { isMobile } = useMatchBreakpoints()
 
   const [pid, setPid] = useState(0)
   const [lockDay, setLockDay] = useState(stakingsConfig[pid].lockDay)
@@ -196,23 +216,23 @@ const Home: React.FC = () => {
   return (
     <Page>
       <Flex flexDirection="column" alignItems="center" justifyContent="center" width="100%" mb="20px">
-        <Text fontSize="30px">{t('Staking Dashboard')}</Text>
-        <Text fontSize="26px">{t('High APR, Low Risk')}</Text>
+        <Heading as="h1" scale="xl">{t('Staking Dashboard')}</Heading>
+        <Heading as="h2" >{t('High APR, Low Risk')}</Heading>
       </Flex>
       <Card>
-        <CardBody m="0 30px">
+        <StyledCardBody>
           <Flex justifyContent="center">
-            <Text fontSize="36px">{t('BBDT Calculator')}</Text>
+            <Heading as="h1" scale="xl">{t('BBDT Calculator')}</Heading>
           </Flex>
           <RowBetween mt="30px">
             <StyledBorderArea maxWidth="380px">
-              <Text>{t('BBDT')}</Text>
+              <Text mr="5px">{t('BBDT')}</Text>
               <StyledInputArea maxWidth="280px">
                 <Input value={depositValue} onChange={handleInputChange} />
                 <MaxButtonArea onClick={handleMax}>{t('MAX')}</MaxButtonArea>
               </StyledInputArea>
             </StyledBorderArea>
-            <Text fontSize="30px">{`APR ${lockAPY}%`}</Text>
+            {!isMobile && <Heading as="h1" scale="xl">{`APR ${lockAPY}%`}</Heading>}
           </RowBetween>
           <StyledBorderBox mt="30px">
             <Text>{t('Lock tokens for :')}</Text>
@@ -221,18 +241,17 @@ const Home: React.FC = () => {
                 const handleClick = () => {
                   handleLockDayChange(stakingConfig.lockDay, index)
                 }
-
                 return (
                   <Button
                     key={stakingConfig.lockDay}
-                    scale="md"
+                    scale={isMobile ? "xs" : "md"}
                     variant={lockDay === stakingConfig.lockDay ? "secondary" : "tertiary"}
                     onClick={handleClick}
                     style={{ flex: 1 }}
                     mr="5px"
                     ml="5px"
                   >
-                    {`${stakingConfig.lockDay}days`}
+                    {`${stakingConfig.lockDay}${!isMobile ? 'days' : ''}`}
                   </Button>
                 )
               })}
@@ -246,12 +265,12 @@ const Home: React.FC = () => {
             {!account ? <ConnectWalletButton /> : renderApprovalOrStakeButton()}
             {userStakeUnlockPeriod === 0 && userStakedAmount.gt(0) && renderWithdrawButton() }
           </Flex>
-        </CardBody>
+        </StyledCardBody>
       </Card>
       <Card mt="20px">
-        <CardBody m="0 30px">
-          <RowBetween width="100%">
-            <StyledBorderBox width="49%" minHeight="170px">
+        <StyledCardBody>
+          <Flex width="100%" flexDirection={isMobile ? "column" : "row"} justifyContent="space-between">
+            <StyledBorderBox width={isMobile ? "100%" : "49%"} minHeight="170px">
               <Box>
                 <Text fontSize="20px">{t('BBDT Staked')}</Text>
                 <Text fontSize="18px" color="primary">{`${userTotalStaked ? getBalanceAmount(userTotalStaked, 9) : 0} BBDT`}</Text>
@@ -261,13 +280,13 @@ const Home: React.FC = () => {
                 <Text fontSize="18px" color="primary">{`${userTotalEarned ? getBalanceAmount(userTotalEarned, 9) : 0} BBDT`}</Text>
               </Box>
             </StyledBorderBox>
-            <StyledBorderBox width="49%" minHeight="170px">
+            <StyledBorderBox width={isMobile ? "100%" : "49%"} minHeight="170px" mt={isMobile ? "20px" : '0px'}>
               <Flex flexDirection="column" alignItems="center" justifyContent="center">
                 <Text fontSize="30px" mt="20px">{t('Total Value (USDT)')}</Text>
                 <Text fontSize="32px" color="primary">{poolTotalStaked && beardPriceBusd ? beardPriceBusd.times(new BigNumber(poolTotalStaked.toSignificant(4))).toFixed(2) : 0}</Text>
               </Flex>
             </StyledBorderBox>
-          </RowBetween>
+          </Flex>
           <StyledBorderBox mt="20px">
             <RowBetween>
               <Text fontSize="20px">{t('Total Staked :')}</Text>
@@ -278,7 +297,7 @@ const Home: React.FC = () => {
               <Text fontSize="20px">{stakedPercent} %</Text>
             </RowBetween>
           </StyledBorderBox>
-        </CardBody>
+        </StyledCardBody>
       </Card>
     </Page>
   )

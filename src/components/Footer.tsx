@@ -9,14 +9,27 @@ const StyledFooterWrapper = styled(Flex)`
   justify-content: space-between;
   max-width: 1200px;
   margin: 15px auto;
-  align-items: center;  
+  align-items: center;
+
+  ${({ theme }) => theme.mediaQueries.xs} {
+    padding: 0 15px;
+  }
+  ${({ theme }) => theme.mediaQueries.sm} {
+    padding: 0 20px;
+  }
+  ${({ theme }) => theme.mediaQueries.md} {
+    padding: 0 30px;
+  }
+  ${({ theme }) => theme.mediaQueries.lg} {
+    padding: 0 10px;
+  }
 `
 
 const LogoImage = styled.img`
   border-radius: 50%;
   width: 60px;
   height: 60px;
-  margin-right: 50px;
+  margin-right: 10px;
 `
 
 const Footer: React.FC = () => {
@@ -27,7 +40,7 @@ const Footer: React.FC = () => {
       <Flex>
         <LogoImage src="/images/logo.png" alt="Get some help" />
         <LangSelector
-          width={50}
+          width={40}
           currentLang={currentLanguage}
           langs={languageList}
           setLang={setLanguage}
@@ -37,10 +50,10 @@ const Footer: React.FC = () => {
         />
       </Flex>
       <Flex>
-        <Link fontSize="14px" href="https://twitter.com/blackbeard" external mr="20px">
+        <Link fontSize="14px" href="https://twitter.com/BlackBeardToken" external mr="20px">
           <TwitterIcon width="30px" />
         </Link>
-        <Link fontSize="14px" href="https://telegram.org/blackbeard" external>
+        <Link fontSize="14px" href="https://t.me/BlackBeardTokenOfficial" external>
           <TelegramIcon width="30px" />
         </Link>
       </Flex>
