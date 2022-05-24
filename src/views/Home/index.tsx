@@ -1,25 +1,31 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import BigNumber from 'bignumber.js'
 import { Box, Button, Card, CardBody, Flex, Input, Text } from '@pancakeswap/uikit'
 import styled from 'styled-components'
 import { useWeb3React } from '@web3-react/core'
 import { useAppDispatch } from 'state'
 import { useTranslation } from 'contexts/Localization'
+import stakingsConfig from 'config/constants/stakings'
 import tokens from 'config/constants/tokens'
+import { FetchStatus } from 'config/constants/types'
 import useToast from 'hooks/useToast'
 import { useERC20 } from 'hooks/useContract'
 import useTotalSupply from 'hooks/useTotalSupply'
+import useTokenBalance from 'hooks/useTokenBalance'
 import { usePriceBeardBusd } from 'state/farms/hooks'
-import { fetchStakingsPublicDataAsync } from 'state/stakings'
+import { fetchStakingsPublicDataAsync, fetchStakingUserDataAsync } from 'state/stakings'
 import { useStakings, usePollStakingsWithUserData } from 'state/stakings/hooks'
-import { useTokenBalance } from 'state/wallet/hooks'
+import { useTokenBalance as useContractTokenBalance } from 'state/wallet/hooks'
 import { getStakingAddress } from 'utils/addressHelpers'
-import { getBalanceAmount } from 'utils/formatBalance'
+import { getBalanceAmount, getFullDisplayBalance } from 'utils/formatBalance'
 import { logError } from 'utils/sentry'
+import getTimePeriods from 'utils/getTimePeriods'
 import ConnectWalletButton from 'components/ConnectWalletButton'
 import Page from 'components/Layout/Page'
 import { RowBetween } from 'components/Layout/Row'
 import useApproveStaking from './hooks/useApproveStaking'
+import useStakeStaking from './hooks/useStakeStaking'
+import useWithdrawStaking from './hooks/useWithdrawStaking'
 
 const StyledInputArea = styled(RowBetween)`
   border: solid 1px #7aff00;
@@ -39,8 +45,11 @@ const StyledBorderBox = styled(Box)`
   padding: 20px;
 `
 
-const lockdayList = [30, 60, 90, 180, 360]
-const apyList = [3, 7, 10, 25, 60]
+const MaxButtonArea = styled.div`
+  margin-left: 20px;
+  font-size: 16px;
+  cursor: pointer;
+`
 
 const Home: React.FC = () => {
   const { t } = useTranslation()
@@ -48,8 +57,13 @@ const Home: React.FC = () => {
   const { account } = useWeb3React()
 
   const [pid, setPid] = useState(0)
-  const [lockDay, setLockDay] = useState(lockdayList[pid])
-  const [lockAPY, setLockAPY] = useState(apyList[pid])
+  const [lockDay, setLockDay] = useState(stakingsConfig[pid].lockDay)
+  const [lockAPY, setLockAPY] = useState(stakingsConfig[pid].apy)
+
+  const [depositValue, setDepositValue] = useState(0)
+
+  const [userStakedAmount, setUserStakedAmount] = useState<BigNumber>(new BigNumber(0))
+  const [userDepositTime, setUserDepositTime] = useState(0)
 
   const [requestedApproval, setRequestedApproval] = useState(false)
 
@@ -64,19 +78,42 @@ const Home: React.FC = () => {
   const userTotalEarned = new BigNumber(totalEarned)
 
   const handleLockDayChange = (value: number, index: number) => {
-    setLockDay(value)
-    setLockAPY(apyList[index])
     setPid(index)
+    setLockDay(value)
+    setLockAPY(stakingsConfig[index].apy)
   }
+
+  useEffect(() => {
+    if (data) {
+      setUserStakedAmount(new BigNumber(data[pid].userData.amount))
+      setUserDepositTime(Number(data[pid].userData.depositTime))
+    }
+  }, [pid, data])
 
   const now = new Date()
   const unlockDate = new Date(now.setDate(now.getDate() + lockDay))
 
+  const userStakeUnlockTime = userDepositTime + lockDay * 86400;
+  const userStakeUnlockPeriod = now.getTime() / 1000 > userStakeUnlockTime ? 0 : userStakeUnlockTime - now.getTime() / 1000
+
+  const { days: lockDays, hours: lockHours, minutes: lockMinutes } = getTimePeriods(userStakeUnlockPeriod)
+
   const tokenContract = useERC20(tokens.bbdt.address)
 
-  const poolTotalStaked = useTokenBalance(getStakingAddress(), tokens.bbdt)
+  const poolTotalStaked = useContractTokenBalance(getStakingAddress(), tokens.bbdt)
   const totalSupply = useTotalSupply(tokens.bbdt)
   const stakedPercent = poolTotalStaked && totalSupply ? new BigNumber(poolTotalStaked.toSignificant(4)).div(new BigNumber(totalSupply.toSignificant(4))).toFixed(2) : 0
+
+  const { balance: beardBalance, fetchStatus: beardFetchStatus } = useTokenBalance(tokens.bbdt.address)  
+
+  const handleMax = () => {
+    if (beardFetchStatus === FetchStatus.Fetched) {
+      const fullDisplayBalance =  getFullDisplayBalance(beardBalance, 9)
+      setDepositValue(Number(fullDisplayBalance))
+    } else {
+      setDepositValue(0)
+    }
+  }
 
   const beardPriceBusd = usePriceBeardBusd()
 
@@ -95,15 +132,65 @@ const Home: React.FC = () => {
     }
   }, [onApprove, dispatch, account, t, toastError])
 
+  const { onStake } = useStakeStaking(pid)
+  const { onWithdraw } = useWithdrawStaking(pid)
+
+  const handleStake = async (amount: string) => {
+    await onStake(amount)
+    dispatch(fetchStakingUserDataAsync({ account, pids: [pid] }))
+  }
+
+  const handleWithdraw = async () => {
+    await onWithdraw()
+    dispatch(fetchStakingUserDataAsync({ account, pids: [pid] }))
+  }
+
   const renderApprovalOrStakeButton = () => {
     const isApproved = account && userAllowance && userAllowance.isGreaterThan(0)
-    return isApproved ? (
-      <Button variant="secondary" minWidth="200px" >{`Stake ${lockDay}days`}</Button>
+    return isApproved && beardFetchStatus === FetchStatus.Fetched ? (
+      <Button 
+        variant="secondary" 
+        minWidth="200px" 
+        disabled={
+          userStakeUnlockPeriod > 0 || 
+          depositValue < 10000 || 
+          depositValue > Number(getFullDisplayBalance(beardBalance, 9))
+        }
+        onClick={async () =>{await handleStake(depositValue.toString())}}
+      >
+        { userStakeUnlockPeriod > 0 ?
+          `${lockDays}days ${lockHours}hours ${lockMinutes}minutes Locked`
+          :
+          (
+            depositValue < 10000 || depositValue > Number(getFullDisplayBalance(beardBalance, 9)) ? 
+            'Invalid stake amount'
+            :
+            `Stake ${lockDay}days`
+          )
+        }
+      </Button>
     ) : (
       <Button variant="secondary" minWidth="200px" disabled={requestedApproval} onClick={handleApprove}>
         {t('Enable Contract')}
       </Button>
     )
+  }
+
+  const renderWithdrawButton = () => {
+    return (
+      <Button 
+        variant="secondary"
+        minWidth="200px"
+        ml="10px"
+        onClick={async () =>{await handleWithdraw()}}
+      >
+        {t(`Withdraw`)}
+      </Button>
+    )
+  }
+
+  const handleInputChange = (e: React.FormEvent<HTMLInputElement>) => {
+    setDepositValue(Number(e.currentTarget.value))
   }
 
   return (
@@ -121,8 +208,8 @@ const Home: React.FC = () => {
             <StyledBorderArea maxWidth="380px">
               <Text>{t('BBDT')}</Text>
               <StyledInputArea maxWidth="280px">
-                <Input />
-                <Text ml="20px">{t('MAX')}</Text>
+                <Input value={depositValue} onChange={handleInputChange} />
+                <MaxButtonArea onClick={handleMax}>{t('MAX')}</MaxButtonArea>
               </StyledInputArea>
             </StyledBorderArea>
             <Text fontSize="30px">{`APR ${lockAPY}%`}</Text>
@@ -130,22 +217,22 @@ const Home: React.FC = () => {
           <StyledBorderBox mt="30px">
             <Text>{t('Lock tokens for :')}</Text>
             <RowBetween mt="10px">
-              {lockdayList.map((item, index) => {
+              {stakingsConfig.map((stakingConfig, index) => {
                 const handleClick = () => {
-                  handleLockDayChange(item, index)
+                  handleLockDayChange(stakingConfig.lockDay, index)
                 }
 
                 return (
                   <Button
-                    key={item}
+                    key={stakingConfig.lockDay}
                     scale="md"
-                    variant={lockDay === item ? "secondary" : "tertiary"}
+                    variant={lockDay === stakingConfig.lockDay ? "secondary" : "tertiary"}
                     onClick={handleClick}
                     style={{ flex: 1 }}
                     mr="5px"
                     ml="5px"
                   >
-                    {`${item}days`}
+                    {`${stakingConfig.lockDay}days`}
                   </Button>
                 )
               })}
@@ -155,8 +242,9 @@ const Home: React.FC = () => {
             <Text fontSize="20px">{`Upto ${lockAPY}% return on ${lockDay}days`}</Text>
             <Text fontSize="20px">{`Lock until ${unlockDate.getDate()}/${unlockDate.getMonth() + 1}/${unlockDate.getFullYear()} ${unlockDate.getHours()}:${unlockDate.getMinutes()}`}</Text>
           </Flex>
-          <Flex flexDirection="column" justifyContent="center" alignItems="center" mt="20px">
+          <Flex justifyContent="center" alignItems="center" mt="20px">
             {!account ? <ConnectWalletButton /> : renderApprovalOrStakeButton()}
+            {userStakeUnlockPeriod === 0 && userStakedAmount.gt(0) && renderWithdrawButton() }
           </Flex>
         </CardBody>
       </Card>
