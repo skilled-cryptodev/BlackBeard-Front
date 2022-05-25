@@ -1101,7 +1101,6 @@ contract Staking is Ownable, Operator {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
 
-        require (_pid != 0, 'deposit by staking');
         require (_amount >= MIN_DEPOSIT_AMOUNT, 'deposit amount failed');
         require (user.depositTime.add(pool.lockDay.mul(86400)) < now, 'locked');
 
@@ -1127,7 +1126,6 @@ contract Staking is Ownable, Operator {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
 
-        require (_pid != 0, 'withdraw by unstaking');
         require (user.amount > 0, 'deposit amount failed');
         require (user.depositTime.add(pool.lockDay.mul(86400)) < now, 'locked');
 
