@@ -42,7 +42,7 @@ const farms: SerializedFarmConfig[] = [
     lpSymbol: 'BBDT-BNB LP',
     lpAddresses: {
       97: '',
-      56: '0xf6CC876253E7f51dbf7E93106504F9F255a0b779',
+      56: '0x93de0371eb88067f11e72cd6f287fc37675c1b0a',
     },
     token: serializedTokens.bbdt,
     quoteToken: serializedTokens.wbnb,

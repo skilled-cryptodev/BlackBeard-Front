@@ -5,7 +5,7 @@ export default {
   },
   staking: {
     97: '',
-    56: '0xAC8E63f1cD5ebE45b79962a66d85573D4c375481',
+    56: '0x8D288eB8B279264FeB38302952E91E0324B1273F',
   },  
   sousChef: {
     97: '0xd3af5fe61dbaf8f73149bfcfa9fb653ff096029a',

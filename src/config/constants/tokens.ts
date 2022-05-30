@@ -23,7 +23,7 @@ export const mainnetTokens = defineTokens({
   bnb: new Token(MAINNET, '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', 18, 'BNB', 'BNB', 'https://www.binance.com/'),
   bbdt: new Token(
     MAINNET,
-    '0x40010262270e0e4Dea2dB5f166bB61213Af66B4a',
+    '0x441D455abA946458dF89e126866A4CedbAC44AB4',
     9,
     'BBDT',
     'Black Beard Token',
