@@ -131,11 +131,11 @@ const Home: React.FC = () => {
 
   usePollStakingsWithUserData()
 
-  const { data, allowance, totalStaked, totalEarned } = useStakings()
+  const { data, allowance, totalStaked /* , totalEarned */ } = useStakings()
 
   const userAllowance = new BigNumber(allowance)
   const userTotalStaked = new BigNumber(totalStaked)
-  const userTotalEarned = new BigNumber(totalEarned)
+  // const userTotalEarned = new BigNumber(totalEarned)
 
   const handleLockDayChange = (value: number, index: number) => {
     setPid(index)
@@ -154,7 +154,7 @@ const Home: React.FC = () => {
   const unlockDate = new Date(now.setDate(now.getDate() + lockDay))
 
   const userStakeUnlockTime = userDepositTime + lockDay * 86400;
-  const userStakeUnlockPeriod = now.getTime() / 1000 > userStakeUnlockTime ? 0 : userStakeUnlockTime - now.getTime() / 1000
+  const userStakeUnlockPeriod = ((new Date()).getTime() / 1000) > userStakeUnlockTime ? 0 : userStakeUnlockTime - ((new Date()).getTime() / 1000)
 
   const { days: lockDays, hours: lockHours, minutes: lockMinutes } = getTimePeriods(userStakeUnlockPeriod)
 
@@ -317,13 +317,13 @@ const Home: React.FC = () => {
               </Box>
               <Box mt="10px">
                 <Text fontSize="20px">{t('BBDT Earned')}</Text>
-                <Text fontSize="18px" color="primary">{`${userTotalEarned ? getBalanceAmount(userTotalEarned, 9) : 0} BBDT`}</Text>
+                <Text fontSize="18px" color="primary">{`${getBalanceAmount(userStakedAmount.times(1 - userStakeUnlockPeriod / (lockDay * 86400)), 9).toFixed(4)} BBDT`}</Text>
               </Box>
             </StyledBorderBox>
             <StyledBorderBox width={isMobile ? "100%" : "49%"} minHeight="170px" mt={isMobile ? "20px" : '0px'}>
               <Flex flexDirection="column" alignItems="center" justifyContent="center">
                 <Text fontSize={isMobile ? "20px" : "30px"} mt="30px">{t('Total Value (USDT)')}</Text>
-                <Text fontSize={isMobile ? "22px" : "32px"} color="primary">{poolTotalStaked && beardPriceBusd ? beardPriceBusd.times(new BigNumber(poolTotalStaked.toSignificant(4))).toFixed(2) : 0}</Text>
+                <Text fontSize={isMobile ? "22px" : "32px"} color="primary">{poolTotalStaked && beardPriceBusd ? beardPriceBusd.times(new BigNumber(poolTotalStaked.toSignificant(4))).toFixed(8) : 0}</Text>
               </Flex>
             </StyledBorderBox>
           </Flex>
